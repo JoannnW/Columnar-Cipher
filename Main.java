@@ -15,21 +15,24 @@ public class Main {
         boolean flag = false;
 
         for (char letter : chars){
-            while (!flag){
+            //System.out.println(letter);
                 if (letter == '.' || letter == ',' || letter == '!' || letter == '?'){
-                    plainText = msg; //saves the original text
-                    //call Cipher, INPUT PLAINTEXT AND KEYWORD; reminder in Cipher to print out "Completed..." first
-                    Cipher myCipher = new Cipher(plainText, keyword);
                     flag = true;
-                } else {
-                    cipherText = msg;
-                    //call Decipher, CIPHER TEXT AND KEYWORD; reminder in Cipher to print out "Completed..." first
-                    Decipher myDecipher = new Decipher(cipherText, keyword);
-                    flag = true;
+                    break;
                 }
-            }
-
         }
+
+        if (flag){
+            plainText = msg; //saves the original text
+            //call Cipher, INPUT PLAINTEXT AND KEYWORD; reminder in Cipher to print out "Completed..." first
+            //System.out.println(plainText);
+            Cipher myCipher = new Cipher(plainText, keyword);
+        } else {
+            cipherText = msg;
+            //call Decipher, CIPHER TEXT AND KEYWORD; reminder in Cipher to print out "Completed..." first
+            Decipher myDecipher = new Decipher(cipherText, keyword);
+        }
+
 
 
     }

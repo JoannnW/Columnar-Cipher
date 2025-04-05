@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Cipher {
     private String plainText;
@@ -6,9 +7,13 @@ public class Cipher {
     private String[][] process;
     private String cipherText = "";
 
+    private int twoDArrayCounter;
+
     public Cipher(String plainText, String keyword){
         this.plainText = plainText;
         this.keyword = keyword;
+
+        //System.out.println(plainText);
 
         //call methods put here
         toLowercase();
@@ -20,35 +25,36 @@ public class Cipher {
     }
 
     public void toLowercase(){
-        plainText.replaceAll(" !&',.:;?", "");//replaces everything listed in regex with an empty string
-        System.out.println(plainText.toLowerCase());
+        plainText = plainText.replaceAll("[ ,!,&,',.,,,:,;,?]", "");//replaces everything listed in regex with an empty string
+        plainText = plainText.toLowerCase();
+        //System.out.println(plainText);
     }
 
     public void inputProcess(){
-
         //organize the input into rows within 2d array process
-        if (plainText.length() / keyword.length() == 0){
-            process = new String[plainText.length() / keyword.length()][keyword.length()];
-        } else {
-            process = new String[(plainText.length() / keyword.length()) + 1][keyword.length()];
+        if (plainText.length() % keyword.length() == 0){
+            process = new String[(int)(plainText.length() / keyword.length())][keyword.length()];
+        } else {//not divisible
+            process = new String[(int)((plainText.length() / keyword.length()) + 1)][keyword.length()];
         }
 
-        int counter = 0;
+        twoDArrayCounter = 0;
         for (int i = 0; i < process.length; i++){
             for (int j = 0; j < process[i].length; j++){
-                process[i][j] = plainText.substring(counter, counter++);
-                counter++;
-            }
-        }
-
-        //fill empty spots with x
-        for (String[] row : process){
-            for (String col : row){
-                if (col.equals(null)){
-                    col = "x";
+                if (twoDArrayCounter < plainText.length()){
+                    process[i][j] = plainText.substring(twoDArrayCounter, twoDArrayCounter + 1);
+                    twoDArrayCounter++;
+                } else {
+                    process[i][j] = "x";
+                    twoDArrayCounter++;
                 }
             }
         }
+
+//        System.out.println("all keyword's letters should be organized within 2d array 'process'");
+//        System.out.println(Arrays.deepToString(process));
+//        System.out.println("counter should be how many letters in total in the 2d array");
+//        System.out.println(twoDArrayCounter);
     }
 
     public void outputProcess(){
@@ -61,50 +67,85 @@ public class Cipher {
         //continue this process until column index order is filled
 
         //Parallel Arrays:
-        ArrayList<Integer> ogIndex = new ArrayList<>(); ogIndex = fillNum(ogIndex, keyword.length());
-        ArrayList<Character> keywordLetters = new ArrayList<>(); keywordLetters = stringToCharArraylist(keywordLetters, keyword, keyword.length());
+        int[] ogIndex = new int[twoDArrayCounter]; ogIndex = fillNum(ogIndex, keyword.length());
+        char[] keywordLetters = new char[twoDArrayCounter]; keywordLetters = stringToCharArraylist(keywordLetters, keyword, keyword.length());
 
         //tracking order of column index
         ArrayList<Integer> indexOrder = new ArrayList<>();
 
-        char first = keywordLetters.getFirst(); indexOrder.add(0,0);//pretend first is the first alphabet and add to indexOrder
-        int counter = 0;
 
         //indexOrder will be filled. ogIndex and keywordLetters will be empty.
-        while (!keywordLetters.isEmpty()){
-            for (int i = 1; i < keywordLetters.size() - 1; i++){
-                if (keywordLetters.get(i).compareTo(first) < 0){ // i is before first
-                    first = keywordLetters.get(i);
-                    indexOrder.add(counter, keywordLetters.indexOf(i)); //replace if needed
+        while (!checkAllNull(keywordLetters)){//not empty = not all null = false
+            char smallest = Character.MAX_VALUE; // Initialize smallest to the maximum value
+            int smallestIndex = -1;
+
+            for (int i = 0; i < keywordLetters.length; i++){
+                if (keywordLetters[i] != '\0' && keywordLetters[i] < smallest) {
+                    smallest = keywordLetters[i];
+                    smallestIndex = i;
+
+//                    System.out.println("---");
+//                    System.out.println("smallest letter at " + i + " iteration: " + smallest);
+//                    System.out.println("smallest letter index at " + i + " iteration is: " + smallestIndex);
+//                    System.out.println("---");
+
                 }
             }
-            keywordLetters.remove(indexOrder.get(counter));
-            ogIndex.remove(indexOrder.get(counter));
-            counter ++;
-        }
+            if (smallestIndex != -1){
+                // Add the smallest element's index to indexOrder
+                indexOrder.add(ogIndex[smallestIndex]);
 
-        //add columns according to indexOrder into ciphertext
-        for (int col : indexOrder){
-            for (int row = 0; row < process.length; row++){
-                cipherText += process[col][row];
+                // Remove the smallest element from keywordLetters and ogIndex
+                keywordLetters[smallestIndex] = '\0';
+                ogIndex[smallestIndex] = -1; // Or any other marker value
             }
         }
+//        System.out.println("IndexOrder should be all different numbers and rank alphabet order of keyword");
+//        System.out.println(indexOrder);
+
+        //add columns according to indexOrder into ciphertext
+        for (int colIndex : indexOrder) {
+            for (int row = 0; row < process.length; row++) {
+                System.out.print(process[row][colIndex] + " ");
+            }
+        }
+
+        // Concatenate elements into a single string
+        StringBuilder concatenatedString = new StringBuilder();
+        for (int colIndex : indexOrder) {
+            for (int row = 0; row < process.length; row++) {
+                concatenatedString.append(process[row][colIndex]);
+            }
+        }
+
+        cipherText = concatenatedString.toString();
+//        System.out.println("\nConcatenated String: " + cipherText);
     }
 
     //sub-methods:
-    public ArrayList<Character> stringToCharArraylist(ArrayList<Character> input, String word, int length){
-        for (int i = 0; i <= length; i++){
-            input.add(i,word.charAt(i));
+    public char[] stringToCharArraylist(char[] input, String word, int length){
+        for (int i = 0; i < length; i++){
+            input [i] = word.charAt(i);
         }
         return input;
     }
 
-    public ArrayList<Integer> fillNum(ArrayList<Integer> empty, int length){
-        for (int i = 0; i < length; i++){
-            empty.add(i,i);
+    public int[] fillNum(int[] empty, int length){
+        for (int i = 0; i <= length; i++){
+            empty[i] = i;
         }
         return empty;
     }
+
+    public boolean checkAllNull(char[] input){
+        for (int i = 0; i < input.length; i ++){
+            if (input[i] != '\0'){
+                return false;
+            }
+        }
+        return true;
+    }
+
 
     //cipher
     //method 1: toLowercase (Transform uppercase letters into lowercase and remove punctuation and spaces)
